@@ -11,7 +11,6 @@ type LockBoxUsecaseMock struct {
 	mock.Mock
 }
 
-// NewLockBoxUsecaseMock создает новый мок для usecase.
 func NewLockBoxUsecaseMock() *LockBoxUsecaseMock {
 	return &LockBoxUsecaseMock{}
 }
@@ -50,4 +49,8 @@ func (u *LockBoxUsecaseMock) GetAllLocks(ctx context.Context, userId int) (*[]mo
 func (u *LockBoxUsecaseMock) ExistsLock(ctx context.Context, name string, userId int) (bool, error) {
 	args := u.Called(ctx, name, userId)
 	return args.Bool(0), args.Error(1)
+}
+func (u *LockBoxUsecaseMock) CreateOrUpdateLock(ctx context.Context, data *models.Data) (int, error) {
+	args := u.Called(ctx, data)
+	return args.Int(0), args.Error(1)
 }
