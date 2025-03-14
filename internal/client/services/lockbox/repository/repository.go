@@ -34,7 +34,7 @@ type SQLiteRepository struct {
 	encryptor crypt.Encryptor
 }
 
-func NewSQLLiteRepository(db *sql.DB) Repository {
+func NewSQLiteRepository(db *sql.DB) Repository {
 	return &SQLiteRepository{
 		db:        db,
 		encryptor: crypt.New(key),

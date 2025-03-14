@@ -39,7 +39,7 @@ func main() {
 func initCLI(ctx context.Context, cfg *config.Config, db *sql.DB) *cli2.LockBoxCLI {
 	lockBoxRepository := repos2.NewSQLiteRepository(db)
 	lockBoxService := clients2.NewLockBoxService(cfg.PgHost, cfg.Port)
-	lockBoxUsecase := usecase2.NewLockBoxUsecase(lockBoxService, lockBoxRepository)
+	lockBoxUsecase := usecase2.NewLockboxUsecase(lockBoxService, lockBoxRepository)
 	lockBoxCli := cli2.NewLockBoxCLI(lockBoxUsecase)
 
 	go func() {
