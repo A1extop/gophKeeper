@@ -3,7 +3,9 @@ package repository
 import (
 	"database/sql"
 	"fmt"
+
 	"github.com/golang-jwt/jwt/v4"
+	"gophKeeper/internal/client/errors"
 	"gophKeeper/internal/client/services/lockbox/models"
 	"gophKeeper/pkg/crypt"
 	"log"
@@ -11,7 +13,7 @@ import (
 	"time"
 )
 
-var jwtSecret = []byte("your-secret-key") // Глобальный секретный ключ
+var jwtSecret = []byte("your-secret-key")
 
 type Repository interface {
 	SaveLockBox(box *models.LockBox) error
@@ -32,7 +34,7 @@ type SQLiteRepository struct {
 	encryptor crypt.Encryptor
 }
 
-func NewSQLiteRepository(db *sql.DB) Repository {
+func NewSQLLiteRepository(db *sql.DB) Repository {
 	return &SQLiteRepository{
 		db:        db,
 		encryptor: crypt.New(key),
@@ -45,17 +47,17 @@ func GetUserIDFromToken(tokenString string) (int, error) {
 	})
 
 	if err != nil || !token.Valid {
-		return 0, fmt.Errorf("invalid token")
+		return 0, errors.ErrInvalidToken
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		return 0, fmt.Errorf("invalid token claims")
+		return 0, errors.ErrInvalidTokenClaims
 	}
 
 	userIdFloat, ok := claims["user_id"].(float64)
 	if !ok {
-		return 0, fmt.Errorf("user_id not found in token")
+		return 0, errors.ErrUserIdNotFoundInToken
 	}
 	return int(userIdFloat), nil
 }
@@ -134,7 +136,6 @@ func (r *SQLiteRepository) GetLockBoxes() (*[]models.LockBox, error) {
 
 		lockboxes = append(lockboxes, *dataDectypt)
 	}
-
 	return &lockboxes, nil
 }
 func (r *SQLiteRepository) GetLockBox(name string) (*models.LockBox, error) {
@@ -251,6 +252,7 @@ func (r *SQLiteRepository) Exists(name string) (bool, error) {
 
 	return count > 0, nil
 }
+
 func (r *SQLiteRepository) SaveToken(token string) {
 	r.authToken = token
 }

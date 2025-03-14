@@ -19,4 +19,5 @@ var (
 	ErrInvalidToken                = errors.New("invalid token")
 	ErrInvalidTokenClaims          = errors.New("invalid token claims")
 	ErrUserIdNotFoundInToken       = errors.New("user id not found in token")
+	ErrLockboxNameTakenByUser      = errors.New("unique_lockbox_name_per_user")
 )

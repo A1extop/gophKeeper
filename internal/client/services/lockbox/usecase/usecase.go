@@ -3,11 +3,10 @@ package usecase
 import (
 	"context"
 	"errors"
-	"fmt"
+	errors1 "gophKeeper/internal/client/errors"
 	"gophKeeper/internal/client/services/lockbox/clients"
 	"gophKeeper/internal/client/services/lockbox/models"
 	"gophKeeper/internal/client/services/lockbox/repository"
-	"strings"
 	"time"
 
 	"log"
@@ -25,24 +24,26 @@ type ILockBoxUsecase interface {
 	SyncUpdatesToServer(ctx context.Context) error
 	SyncUpdatesToLocal(ctx context.Context) error
 }
-type LockBoxUsecase struct {
+type LockboxUsecase struct {
 	lockBoxService    clients.LockBoxService
 	lockBoxRepository repository.Repository
 }
 
-func NewLockBoxUsecase(lockBoxService clients.LockBoxService, lockBoxRepository repository.Repository) ILockBoxUsecase {
-	return &LockBoxUsecase{lockBoxService: lockBoxService, lockBoxRepository: lockBoxRepository}
+func NewLockboxUsecase(lockBoxService clients.LockBoxService, lockBoxRepository repository.Repository) ILockBoxUsecase {
+	return &LockboxUsecase{lockBoxService: lockBoxService, lockBoxRepository: lockBoxRepository}
 }
 
-func (uc *LockBoxUsecase) CreateLockBox(ctx context.Context, data *models.LockBoxInput) (int, error) {
-	if data.Name == "" && (data.URL == "" || data.Login == "" || data.Password == "" || data.Description == "") {
-		return 0, errors.New("url, login, and password are required")
+func (uc *LockboxUsecase) CreateLockBox(ctx context.Context, data *models.LockBoxInput) (int, error) {
+	if data.Name == "" {
+		return 0, errors1.ErrNameLockboxRequired
 	}
-
+	if data.URL == "" && data.Login == "" && data.Password == "" && data.Description == "" {
+		return 0, errors1.ErrDataRequired
+	}
 	id, err := uc.lockBoxService.Create(ctx, data)
 	if err != nil {
-		if strings.Contains(err.Error(), "unique_lockbox_name_per_user") {
-			return 0, errors.New("lockbox with this name already exists")
+		if errors.Is(err, errors1.ErrLockboxNameTakenByUser) {
+			return 0, errors1.ErrExists
 		}
 
 		lockBox := models.LockBox{
@@ -80,7 +81,7 @@ func (uc *LockBoxUsecase) CreateLockBox(ctx context.Context, data *models.LockBo
 	return id, nil
 }
 
-func (uc *LockBoxUsecase) DeleteLockBox(ctx context.Context, name string) error {
+func (uc *LockboxUsecase) DeleteLockBox(ctx context.Context, name string) error {
 	err := uc.lockBoxRepository.Deleted(name)
 	if err != nil {
 		log.Println(err)
@@ -88,28 +89,28 @@ func (uc *LockBoxUsecase) DeleteLockBox(ctx context.Context, name string) error 
 	return uc.lockBoxService.Delete(ctx, name)
 }
 
-func (uc *LockBoxUsecase) GetLockBoxById(ctx context.Context, name string) (*models.LockBox, error) {
+func (uc *LockboxUsecase) GetLockBoxById(ctx context.Context, name string) (*models.LockBox, error) {
 	lockBox, err1 := uc.lockBoxService.Get(ctx, name)
 	if err1 != nil {
 		log.Println(err1)
 		lockBox, err2 := uc.lockBoxRepository.GetLockBox(name)
 		if err2 != nil {
 			log.Println(err2)
-			return nil, errors.New("lockbox not found")
+			return nil, errors1.ErrNotFound
 		}
 		return lockBox, nil
 	}
 	return lockBox, nil
 }
 
-func (uc *LockBoxUsecase) GetLockBoxAll(ctx context.Context) (*[]models.LockBox, error) {
+func (uc *LockboxUsecase) GetLockBoxAll(ctx context.Context) (*[]models.LockBox, error) {
 	lockBoxes, err1 := uc.lockBoxService.GetAll(ctx)
 	if err1 != nil {
 		log.Println(err1)
 		lockBoxes, err2 := uc.lockBoxRepository.GetLockBoxes()
 		if err2 != nil {
 			log.Println(err2)
-			return nil, errors.New("lockbox not found")
+			return nil, errors1.ErrNotFound
 		}
 		return lockBoxes, nil
 	}
@@ -117,9 +118,9 @@ func (uc *LockBoxUsecase) GetLockBoxAll(ctx context.Context) (*[]models.LockBox,
 
 }
 
-func (uc *LockBoxUsecase) UpdateLockBox(ctx context.Context, data *models.LockBoxInput) error {
+func (uc *LockboxUsecase) UpdateLockBox(ctx context.Context, data *models.LockBoxInput) error {
 	if data.Name == "" || (data.Login == "" && data.Password == "" && data.Description == "" && data.URL == "") {
-		return fmt.Errorf("no data to update")
+		return errors1.ErrNodataToUpdate
 	}
 	lockBox := models.LockBox{
 		Name:        data.Name,
@@ -134,7 +135,7 @@ func (uc *LockBoxUsecase) UpdateLockBox(ctx context.Context, data *models.LockBo
 		err1 := uc.lockBoxRepository.Updated(&lockBox)
 		if err1 != nil {
 			log.Println("failed to update lockbox local:", err1)
-			return errors.New("lockbox not found")
+			return errors1.ErrNotFound
 		}
 		return nil
 	}
@@ -143,23 +144,23 @@ func (uc *LockBoxUsecase) UpdateLockBox(ctx context.Context, data *models.LockBo
 	return nil
 }
 
-func (uc *LockBoxUsecase) Register(ctx context.Context, username, password string) error {
+func (uc *LockboxUsecase) Register(ctx context.Context, username, password string) error {
 	if len(username) < 3 {
-		return errors.New("username must be at least 3 characters")
+		return errors1.ErrUsernameTooShort
 	}
 	if len(password) < 6 {
-		return errors.New("password must be at least 6 characters")
+		return errors1.ErrPasswordTooShort
 	}
 
 	return uc.lockBoxService.RegisterUser(ctx, username, password)
 }
 
-func (uc *LockBoxUsecase) Authenticate(ctx context.Context, username, password string) error {
+func (uc *LockboxUsecase) Authenticate(ctx context.Context, username, password string) error {
 	if len(username) < 3 {
-		return errors.New("incorrect login")
+		return errors1.ErrIncorrectUsername
 	}
 	if len(password) < 6 {
-		return errors.New("incorrect password")
+		return errors1.ErrIncorrectPassword
 	}
 	token, err := uc.lockBoxService.AuthUser(ctx, username, password)
 	if err != nil {
@@ -169,11 +170,11 @@ func (uc *LockBoxUsecase) Authenticate(ctx context.Context, username, password s
 	return nil
 }
 
-func (uc *LockBoxUsecase) IsAuthenticated() bool {
+func (uc *LockboxUsecase) IsAuthenticated() bool {
 	return uc.lockBoxService.Authenticated()
 }
 
-func (uc *LockBoxUsecase) SyncUpdatesToServer(ctx context.Context) error { //todo также учитывать, с обновлением и удалением временем
+func (uc *LockboxUsecase) SyncUpdatesToServer(ctx context.Context) error {
 	items, err := uc.lockBoxRepository.GetLockBoxes()
 	if err != nil {
 		return err
@@ -187,7 +188,7 @@ func (uc *LockBoxUsecase) SyncUpdatesToServer(ctx context.Context) error { //tod
 	return nil
 }
 
-func (uc *LockBoxUsecase) SyncUpdatesToLocal(ctx context.Context) error {
+func (uc *LockboxUsecase) SyncUpdatesToLocal(ctx context.Context) error {
 	items, err := uc.lockBoxService.GetAll(ctx)
 	if err != nil {
 		return err

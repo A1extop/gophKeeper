@@ -18,7 +18,6 @@ import (
 	"time"
 )
 
-// todo так, синхронизацию с серверной надо доделать
 func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
@@ -49,11 +48,11 @@ func initCLI(ctx context.Context, cfg *config.Config, db *sql.DB) *cli2.LockBoxC
 		for {
 			select {
 			case <-ticker.C:
-				_ = lockBoxUsecase.SyncUpdatesToServer(ctx)
+				lockBoxUsecase.SyncUpdatesToServer(ctx)
 				//if err != nil {
 				//	fmt.Println(err)
 				//}
-				_ = lockBoxUsecase.SyncUpdatesToLocal(ctx)
+				lockBoxUsecase.SyncUpdatesToLocal(ctx)
 				//if err != nil {
 				//	fmt.Println(err)
 				//}
@@ -69,7 +68,7 @@ func initCLI(ctx context.Context, cfg *config.Config, db *sql.DB) *cli2.LockBoxC
 		for {
 			select {
 			case <-ticker.C:
-				_ = lockBoxRepository.PurgeExpiredLocks()
+				lockBoxRepository.PurgeExpiredLocks()
 			case <-ctx.Done():
 				return
 			}
@@ -197,19 +196,19 @@ func createLockBoxFlow(lockBoxCli *cli2.LockBoxCLI, ctx context.Context) {
 
 		fmt.Print("URL: ")
 		var url string
-		_, _ = fmt.Scanln(&url)
+		fmt.Scanln(&url)
 
 		fmt.Print("Логин: ")
 		var login string
-		_, _ = fmt.Scanln(&login)
+		fmt.Scanln(&login)
 
 		fmt.Print("Пароль: ")
 		var password string
-		_, _ = fmt.Scanln(&password)
+		fmt.Scanln(&password)
 
 		fmt.Print("Описание (необязательно): ")
 		var description string
-		_, _ = fmt.Scanln(&description)
+		fmt.Scanln(&description)
 
 		cmd := lockBoxCli.CreateCommand(ctx)
 		cmd.SetArgs([]string{
@@ -303,19 +302,19 @@ func updateLockBoxFlow4(lockBoxCli *cli2.LockBoxCLI, ctx context.Context) {
 
 		fmt.Print("URL: ")
 		var url string
-		_, _ = fmt.Scanln(&url)
+		fmt.Scanln(&url)
 
 		fmt.Print("Логин: ")
 		var login string
-		_, _ = fmt.Scanln(&login)
+		fmt.Scanln(&login)
 
 		fmt.Print("Пароль: ")
 		var password string
-		_, _ = fmt.Scanln(&password)
+		fmt.Scanln(&password)
 
 		fmt.Print("Описание (необязательно): ")
 		var description string
-		_, _ = fmt.Scanln(&description)
+		fmt.Scanln(&description)
 
 		cmd := lockBoxCli.UpdateCommand(ctx)
 		cmd.SetArgs([]string{
