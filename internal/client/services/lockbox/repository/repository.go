@@ -241,13 +241,15 @@ func (r *SQLiteRepository) Exists(name string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	var exists bool
-	query := "SELECT EXISTS(SELECT 1 FROM lockbox WHERE name = ? AND user_id = ? LIMIT 1)"
-	err = r.db.QueryRow(query, name, userID).Scan(&exists)
+
+	var count int
+	query := "SELECT COUNT(*) FROM lockbox WHERE name = ? AND user_id = ?"
+	err = r.db.QueryRow(query, name, userID).Scan(&count)
 	if err != nil {
 		return false, err
 	}
-	return exists, nil
+
+	return count > 0, nil
 }
 func (r *SQLiteRepository) SaveToken(token string) {
 	r.authToken = token

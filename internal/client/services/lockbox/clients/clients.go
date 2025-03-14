@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
+	errors "gophKeeper/internal/client/errors"
 	"gophKeeper/internal/client/services/lockbox/models"
 	"gophKeeper/pkg/crypt"
 	"io"
@@ -55,7 +55,7 @@ func (s *lockBoxService) Create(ctx context.Context, data *models.LockBoxInput) 
 	}
 
 	url := s.baseURL + ":" + s.port + "/api/lock_boxes/create"
-	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonData))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return 0, err
 	}
@@ -85,7 +85,7 @@ func (s *lockBoxService) Create(ctx context.Context, data *models.LockBoxInput) 
 
 func (s *lockBoxService) Get(ctx context.Context, name string) (*models.LockBox, error) {
 	url := fmt.Sprintf("%s:%s/api/lock_boxes/%s", s.baseURL, s.port, name)
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +118,7 @@ func (s *lockBoxService) Get(ctx context.Context, name string) (*models.LockBox,
 func (s *lockBoxService) GetAll(ctx context.Context) (*[]models.LockBox, error) {
 	url := fmt.Sprintf("%s:%s/api/lock_boxes/", s.baseURL, s.port)
 
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -164,7 +164,7 @@ func (s *lockBoxService) Update(ctx context.Context, data *models.LockBoxInput) 
 		return err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "PUT", url, bytes.NewBuffer(jsonData))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return err
 	}
@@ -188,7 +188,7 @@ func (s *lockBoxService) Update(ctx context.Context, data *models.LockBoxInput) 
 func (s *lockBoxService) Delete(ctx context.Context, name string) error {
 	url := fmt.Sprintf("%s:%s/api/lock_boxes/%s", s.baseURL, s.port, name)
 
-	req, err := http.NewRequestWithContext(ctx, "DELETE", url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, url, nil)
 	if err != nil {
 		return err
 	}
@@ -210,7 +210,7 @@ func (s *lockBoxService) Delete(ctx context.Context, name string) error {
 
 func (s *lockBoxService) RegisterUser(ctx context.Context, username, password string) error {
 	if username == "" || password == "" {
-		return errors.New("username and password are required")
+		return errors.ErrUsernameAndPasswordRequired
 	}
 
 	data := map[string]string{"username": username, "password": password}
@@ -220,7 +220,7 @@ func (s *lockBoxService) RegisterUser(ctx context.Context, username, password st
 	}
 
 	url := s.baseURL + ":" + s.port + "/api/users/"
-	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonData))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
@@ -246,7 +246,7 @@ func (s *lockBoxService) RegisterUser(ctx context.Context, username, password st
 
 func (s *lockBoxService) AuthUser(ctx context.Context, username, password string) (string, error) {
 	if username == "" || password == "" {
-		return "", errors.New("username and password are required")
+		return "", errors.ErrUsernameAndPasswordRequired
 	}
 
 	data := map[string]string{"username": username, "password": password}
@@ -257,7 +257,7 @@ func (s *lockBoxService) AuthUser(ctx context.Context, username, password string
 
 	url := s.baseURL + ":" + s.port + "/api/auth/login"
 
-	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonData))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return "", fmt.Errorf("failed to create request: %w", err)
 	}
@@ -303,7 +303,7 @@ func (s *lockBoxService) UpdateOrCreate(ctx context.Context, data *models.LockBo
 	}
 
 	url := s.baseURL + ":" + s.port + "/api/lock_boxes/create/update"
-	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonData))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return err
 	}
@@ -316,12 +316,10 @@ func (s *lockBoxService) UpdateOrCreate(ctx context.Context, data *models.LockBo
 		return err
 	}
 	defer resp.Body.Close()
-	//todo опять же не уверен насчёт статус кодов
 	if (resp.StatusCode != http.StatusCreated) && (resp.StatusCode != http.StatusOK) {
 		body, _ := io.ReadAll(resp.Body)
 		return fmt.Errorf("failed to create or update lockbox (code %d): %s", resp.StatusCode, string(body))
 	}
-	//todo тут может не приходить айдишник, проверить. как отреагирует
 	var response struct {
 		ID int `json:"id"`
 	}

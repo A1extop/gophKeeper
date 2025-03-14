@@ -35,7 +35,7 @@ func (ur *userRepository) Create(ctx context.Context, user *models.User) error {
 	user.Password = string(hashedPassword)
 
 	query := `
-        INSERT INTO Users (username, password_hash, user_type)
+        INSERT INTO users (username, password_hash, user_type)
         VALUES ($1,  $2, $3) RETURNING user_id`
 
 	return ur.db.GetDB().QueryRow(ctx, query, user.Username, user.Password, user.UserType).Scan(&user.UserId)
@@ -70,22 +70,36 @@ func (ur *userRepository) Delete(id int) error {
 
 func (ur *userRepository) GetAll(ctx context.Context) ([]*models.User, error) {
 	var users []*models.User
-	query := "select * from \"users\""
+
+	query := `
+		SELECT user_id, username, password_hash, user_type, created_at
+		FROM "users"
+	`
+
 	rows, err := ur.db.GetDB().Query(ctx, query)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
+
 	for rows.Next() {
 		var user models.User
-		err := rows.Scan(&user)
+		err := rows.Scan(
+			&user.UserId,
+			&user.Username,
+			&user.Password,
+			&user.UserType,
+			&user.CreatedAt,
+		)
 		if err != nil {
 			return nil, err
 		}
 		users = append(users, &user)
 	}
+
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
+
 	return users, nil
 }

@@ -2,7 +2,7 @@
 -- +goose StatementBegin
 CREATE TYPE user_type AS ENUM ('admin', 'attendee');
 
-CREATE TABLE IF NOT EXISTS Users
+CREATE TABLE IF NOT EXISTS users
 (
     user_id       SERIAL PRIMARY KEY,
     username      VARCHAR(50)         NOT NULL UNIQUE,

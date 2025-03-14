@@ -71,7 +71,7 @@ func main() {
 		for {
 			select {
 			case <-ticker.C:
-				_, _ = lockBoxRepos.PurgeExpiredLocks(ctx)
+				lockBoxRepos.PurgeExpiredLocks(ctx)
 			case <-ctx.Done():
 				return
 			}
