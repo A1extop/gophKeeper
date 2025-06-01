@@ -2,8 +2,8 @@ package usecase
 
 import (
 	"context"
-	"errors"
 	"github.com/stretchr/testify/mock"
+	"gophKeeper/internal/server/domain"
 	"gophKeeper/internal/server/services/users/models"
 	"gophKeeper/util"
 )
@@ -26,7 +26,7 @@ func (us *UserUsecaseMock) CreateUser(ctx context.Context, user *models.User) er
 		user.UserType = "attendee"
 	}
 	if !util.IsValidUserTypeForRegistration(user.UserType) {
-		return errors.New("invalid user type")
+		return domain.ErrInvalidUserType
 	}
 	args := us.Called(ctx, user)
 	return args.Error(0)

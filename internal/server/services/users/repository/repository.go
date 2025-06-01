@@ -3,9 +3,9 @@ package repository
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"golang.org/x/crypto/bcrypt"
 	"gophKeeper/internal/server/db"
+	"gophKeeper/internal/server/domain"
 	"gophKeeper/internal/server/services/users/models"
 )
 
@@ -49,7 +49,7 @@ func (ur *userRepository) GetByID(ctx context.Context, userId int) (*models.User
 	if err != nil {
 		if err == sql.ErrNoRows {
 			// Если нет строк, это означает, что логин и/или пароль неверны
-			return nil, errors.New("not found")
+			return nil, domain.ErrUserNotFound
 		}
 		return nil, err
 	}

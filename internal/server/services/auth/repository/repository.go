@@ -3,9 +3,9 @@ package repository
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"golang.org/x/crypto/bcrypt"
 	"gophKeeper/internal/server/db"
+	"gophKeeper/internal/server/domain"
 	"gophKeeper/internal/server/services/auth/models"
 )
 
@@ -32,14 +32,14 @@ func (a *authRepository) GetInfoUser(ctx context.Context, user *models.AuthUser)
 	err := row.Scan(&infoUser.UserId, &infoUser.Username, &infoUser.UserType, &storedPasswordHash)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, errors.New("логин и/или пароль неверны")
+			return nil, domain.ErrInvalidCredentials
 		}
 		return nil, err
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(storedPasswordHash), []byte(user.Password))
 	if err != nil {
-		return nil, errors.New("логин и/или пароль неверны")
+		return nil, domain.ErrInvalidCredentials
 	}
 
 	return &infoUser, nil

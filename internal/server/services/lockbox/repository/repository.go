@@ -63,8 +63,6 @@ func (l *LockBoxRepo) Update(ctx context.Context, data *models.Data) error {
 	return nil
 }
 
-// todo также нужно сверить, может быть удалено на сервере, а обновлено на локал, сверить данные, если обновление позже удаления, то это учесть
-// todo а надо будет один хер как-то чистить память, возможно удалять записи по истечению какого-то времени, например раз в сутки
 func (l *LockBoxRepo) Delete(ctx context.Context, name string, userId int) error {
 	query := `UPDATE lockbox 
               SET deleted_at = NOW() 

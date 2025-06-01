@@ -2,8 +2,7 @@ package usecase
 
 import (
 	"context"
-	"errors"
-	"fmt"
+	"gophKeeper/internal/server/domain"
 	"gophKeeper/internal/server/services/lockbox/models"
 	"gophKeeper/internal/server/services/lockbox/repository"
 )
@@ -31,7 +30,7 @@ func (u *LockBoxUsecase) UpdateLock(ctx context.Context, data *models.Data) erro
 }
 func (u *LockBoxUsecase) DeleteLock(ctx context.Context, name string, userId int) error {
 	if name == "" {
-		return errors.New("name is empty")
+		return domain.ErrNameEmpty
 	}
 	return u.repo.Delete(ctx, name, userId)
 }
@@ -41,7 +40,7 @@ func (u *LockBoxUsecase) GetLockByName(ctx context.Context, name string, userId 
 func (u *LockBoxUsecase) CreateLock(ctx context.Context, data *models.Data) (int, error) {
 
 	if data.Name == "" && (data.UserID == 0 || (data.Login == "" && data.Url == "" && data.Description == "" && data.Password == "")) {
-		return 0, fmt.Errorf("no data to create")
+		return 0, domain.ErrNoDataToCreate
 	}
 	return u.repo.Create(ctx, data)
 }
@@ -59,7 +58,7 @@ func (u *LockBoxUsecase) GetAllLocks(ctx context.Context, userId int) (*[]models
 
 func (u *LockBoxUsecase) ExistsLock(ctx context.Context, name string, userId int) (bool, error) {
 	if name == "" {
-		return false, errors.New("name is empty")
+		return false, domain.ErrNameEmpty
 	}
 	return u.repo.Exists(ctx, name, userId)
 }

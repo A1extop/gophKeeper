@@ -3,6 +3,7 @@ package v1
 import (
 	"github.com/gin-gonic/gin"
 	"gophKeeper/internal/server/config"
+	"gophKeeper/internal/server/domain"
 	"gophKeeper/internal/server/middleware"
 	"gophKeeper/internal/server/services/lockbox/models"
 	"gophKeeper/internal/server/services/lockbox/usecase"
@@ -106,7 +107,7 @@ func (l *LockBoxHandler) getLockBoxes(ctx *gin.Context) {
 		return
 	}
 	if len(*lockBoxes) == 0 {
-		ctx.JSON(http.StatusNotFound, gin.H{"error": "lockbox not found"})
+		ctx.JSON(http.StatusNotFound, gin.H{"error": domain.ErrLockBoxNotFound.Error()})
 		return
 	}
 	ctx.JSON(http.StatusOK, lockBoxes)

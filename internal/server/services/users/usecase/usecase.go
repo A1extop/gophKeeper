@@ -2,7 +2,7 @@ package usecase
 
 import (
 	"context"
-	"errors"
+	"gophKeeper/internal/server/domain"
 	"gophKeeper/internal/server/services/users/models"
 	"gophKeeper/internal/server/services/users/repository"
 	"gophKeeper/util"
@@ -35,7 +35,7 @@ func (us *UserUsecase) CreateUser(ctx context.Context, user *models.User) error 
 		user.UserType = "attendee"
 	}
 	if !util.IsValidUserTypeForRegistration(user.UserType) {
-		return errors.New("invalid user type")
+		return domain.ErrInvalidUserType
 	}
 	return us.repo.Create(ctx, user)
 }

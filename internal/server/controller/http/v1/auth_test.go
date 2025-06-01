@@ -3,11 +3,11 @@ package v1
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"gophKeeper/internal/server/config"
+	"gophKeeper/internal/server/domain"
 	"gophKeeper/internal/server/middleware"
 	"gophKeeper/internal/server/services/auth/models"
 	"gophKeeper/internal/server/services/auth/usecase"
@@ -79,12 +79,12 @@ func TestAuthHandler_Login(t *testing.T) {
 		r.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assert.Contains(t, w.Body.String(), "Invalid input")
+		assert.Contains(t, w.Body.String(), domain.ErrInvalidInput.Error())
 	})
 
 	t.Run("InvalidCredentials", func(t *testing.T) {
 		mockAuthUsecase.On("CheckUser", mock.Anything, &models.AuthUser{Username: "test", Password: "wrongpassword"}).
-			Return(nil, fmt.Errorf("invalid credentials"))
+			Return(nil, domain.ErrInvalidCredentials)
 
 		payload := &models.AuthUser{
 			Username: "test",
@@ -99,7 +99,7 @@ func TestAuthHandler_Login(t *testing.T) {
 		r.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusUnauthorized, w.Code)
-		assert.Contains(t, w.Body.String(), "Invalid credentials")
+		assert.Contains(t, w.Body.String(), domain.ErrInvalidCredentials)
 	})
 
 	t.Run("InternalError", func(t *testing.T) {
@@ -110,7 +110,7 @@ func TestAuthHandler_Login(t *testing.T) {
 			return user.Username == "test" && user.Password == "password"
 		})).Return(&models.InfoUser{UserId: 1, Username: "test", UserType: "admin"}, nil)
 
-		mockMiddlewareService.On("CreateToken", 1, "test", "admin").Return("", fmt.Errorf("could not create token"))
+		mockMiddlewareService.On("CreateToken", 1, "test", "admin").Return("", domain.ErrTokenCreation)
 
 		payload := &models.AuthUser{Username: "test", Password: "password"}
 		body, _ := json.Marshal(payload)

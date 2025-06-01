@@ -3,6 +3,7 @@ package v1
 import (
 	"github.com/gin-gonic/gin"
 	"gophKeeper/internal/server/config"
+	"gophKeeper/internal/server/domain"
 	"gophKeeper/internal/server/middleware"
 	"gophKeeper/internal/server/services/auth/models"
 	"gophKeeper/internal/server/services/auth/usecase"
@@ -31,19 +32,19 @@ func NewAuthHandler(config *config.Config, engine *gin.RouterGroup, service usec
 func (h *AuthHandler) login(c *gin.Context) {
 	var user models.AuthUser
 	if err := c.ShouldBindJSON(&user); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": domain.ErrInvalidInput.Error()})
 		return
 	}
 
 	userInfo, err := h.service.CheckUser(c, &user)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": domain.ErrInvalidCredentials.Error()})
 		return
 	}
 
 	token, err := h.mware.CreateToken(userInfo.UserId, userInfo.Username, userInfo.UserType)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not create token"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": domain.ErrTokenCreation.Error()})
 		return
 	}
 
